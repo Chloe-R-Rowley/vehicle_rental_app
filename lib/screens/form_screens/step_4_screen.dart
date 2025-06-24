@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:vehicle_rental_app/screens/form_screens/step_5_screen.dart';
+import 'package:vehicle_rental_app/bloc/vehicle_detail_bloc.dart';
+import 'package:vehicle_rental_app/models/vehicle_detail_model.dart';
 
 class Step4Screen extends StatefulWidget {
   final String firstName;
   final String lastName;
   final int numberOfWheels;
   final String vehicleType;
+  final String vehicleTypeId;
+  final List<String> vehicleIds;
   const Step4Screen({
     super.key,
     required this.firstName,
     required this.lastName,
     required this.numberOfWheels,
     required this.vehicleType,
+    required this.vehicleTypeId,
+    required this.vehicleIds,
   });
 
   @override
@@ -21,11 +27,16 @@ class Step4Screen extends StatefulWidget {
 class _Step4ScreenState extends State<Step4Screen>
     with SingleTickerProviderStateMixin {
   List<Map<String, String>> _modelOptions = [];
-  String? _selectedModel;
+  List<VehicleDetailModel> _models = [];
+  String? _selectedModelId;
   bool _loading = true;
+  String? _error;
 
   late AnimationController _progressController;
   late Animation<double> _progressAnimation;
+
+  VehicleDetailBloc? _bloc;
+  Stream<VehicleDetailState>? _blocStream;
 
   @override
   void initState() {
@@ -37,15 +48,26 @@ class _Step4ScreenState extends State<Step4Screen>
     _progressAnimation = Tween<double>(begin: 0.6, end: 0.8).animate(
       CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
     );
-    _fetchModelOptions();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _progressController.status == AnimationStatus.dismissed) {
-        _progressController.forward();
+    _bloc = VehicleDetailBloc();
+    _blocStream = _bloc!.state;
+    _bloc!.fetchMultipleVehicleDetails(widget.vehicleIds);
+    _blocStream!.listen((state) {
+      if (!mounted) return;
+      if (state is VehicleDetailLoading) {
+        setState(() {
+          _loading = true;
+        });
+      } else if (state is VehicleModelsLoaded) {
+        setState(() {
+          _loading = false;
+          _models = state.models;
+          _error = null;
+        });
+      } else if (state is VehicleDetailError) {
+        setState(() {
+          _loading = false;
+          _error = state.message;
+        });
       }
     });
   }
@@ -53,38 +75,8 @@ class _Step4ScreenState extends State<Step4Screen>
   @override
   void dispose() {
     _progressController.dispose();
+    _bloc?.dispose();
     super.dispose();
-  }
-
-  Future<void> _fetchModelOptions() async {
-    await Future.delayed(const Duration(seconds: 1));
-    final options = <String, List<Map<String, String>>>{
-      'Car': [
-        {'name': 'Sedan', 'image': 'assets/images/cars/sedan.png'},
-        {'name': 'SUV', 'image': 'assets/images/cars/suv.png'},
-        {'name': 'Hatchback', 'image': 'assets/images/cars/hatchback.png'},
-      ],
-      'Motorcycle': [
-        {'name': 'Sport Bike', 'image': 'assets/images/bikes/sportsbike.png'},
-        {'name': 'Cruiser', 'image': 'assets/images/bikes/cruiser.png'},
-      ],
-      'Truck': [
-        {'name': 'Pickup', 'image': 'assets/images/trucks/pickup.png'},
-        {'name': 'Lorry', 'image': 'assets/images/trucks/lorry.png'},
-      ],
-      'Bus': [
-        {'name': 'Mini Bus', 'image': 'assets/images/buses/minibus.png'},
-        {'name': 'Coach', 'image': 'assets/images/buses/coach.png'},
-      ],
-      'Van': [
-        {'name': 'Cargo Van', 'image': 'assets/images/vans/cargo.png'},
-        {'name': 'Minivan', 'image': 'assets/images/vans/minivan.png'},
-      ],
-    };
-    setState(() {
-      _modelOptions = options[widget.vehicleType] ?? [];
-      _loading = false;
-    });
   }
 
   @override
@@ -137,43 +129,56 @@ class _Step4ScreenState extends State<Step4Screen>
                         ),
                       ),
                     )
+                  else if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(color: Colors.red, fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
                   else
                     Column(
-                      children: _modelOptions
+                      children: _models
                           .map(
                             (model) => Padding(
                               padding: const EdgeInsets.symmetric(
                                 vertical: 8.0,
                               ),
                               child: RadioListTile<String>(
-                                value: model['name']!,
-                                groupValue: _selectedModel,
+                                value: model.id,
+                                groupValue: _selectedModelId,
                                 onChanged: (value) {
                                   setState(() {
-                                    _selectedModel = value;
+                                    _selectedModelId = value;
                                   });
                                 },
-                                title: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                title: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(16),
+
+                                      child: Image.network(
+                                        model.imageUrl,
+                                        height: 84,
+                                        width: 110,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                const Icon(
+                                                  Icons.directions_car,
+                                                  color: Colors.white,
+                                                ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
                                     Text(
-                                      model['name']!,
+                                      model.name,
                                       style: const TextStyle(
                                         color: Colors.white,
                                       ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Image.asset(
-                                      model['image']!,
-                                      height: 200,
-                                      width: 200,
-                                      fit: BoxFit.contain,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              const Icon(
-                                                Icons.directions_car,
-                                                color: Colors.white,
-                                              ),
                                     ),
                                   ],
                                 ),
@@ -238,10 +243,10 @@ class _Step4ScreenState extends State<Step4Screen>
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        onPressed: _selectedModel != null
+                        onPressed: _selectedModelId != null
                             ? () {
-                                final selectedModel = _modelOptions.firstWhere(
-                                  (m) => m['name'] == _selectedModel,
+                                final selectedModel = _models.firstWhere(
+                                  (m) => m.id == _selectedModelId,
                                 );
                                 Navigator.of(context).push(
                                   PageRouteBuilder(
@@ -255,8 +260,8 @@ class _Step4ScreenState extends State<Step4Screen>
                                           lastName: widget.lastName,
                                           numberOfWheels: widget.numberOfWheels,
                                           vehicleType: widget.vehicleType,
-                                          modelName: selectedModel['name']!,
-                                          modelImage: selectedModel['image']!,
+                                          modelName: selectedModel.name,
+                                          modelImage: selectedModel.imageUrl,
                                         ),
                                     transitionsBuilder:
                                         (

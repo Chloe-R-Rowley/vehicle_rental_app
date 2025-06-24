@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:vehicle_rental_app/models/vehicle_app_db.dart';
 import '../models/vehicle_type_model.dart';
-import '../models/vehicle_type_db.dart';
 
 abstract class VehicleTypeState {}
 
@@ -35,7 +35,7 @@ class VehicleTypeBloc {
 
   Future<void> fetchVehicleTypes() async {
     _stateController.add(VehicleTypeLoading());
-    final db = VehicleTypeDb();
+    final db = VehicleDb();
     if (await _isOnline()) {
       try {
         final response = await http.get(

@@ -22,7 +22,8 @@ class Step3Screen extends StatefulWidget {
 class _Step3ScreenState extends State<Step3Screen>
     with SingleTickerProviderStateMixin {
   List<VehicleTypeModel> _vehicleTypes = [];
-  String? _selectedVehicleType;
+  String? _selectedVehicleTypeId;
+  String? _selectedVehicleTypeName;
   bool _loading = true;
   String? _error;
 
@@ -163,10 +164,11 @@ class _Step3ScreenState extends State<Step3Screen>
                               ),
                               child: RadioListTile<String>(
                                 value: type.name,
-                                groupValue: _selectedVehicleType,
+                                groupValue: _selectedVehicleTypeName,
                                 onChanged: (value) {
                                   setState(() {
-                                    _selectedVehicleType = value;
+                                    _selectedVehicleTypeName = value;
+                                    _selectedVehicleTypeId = type.id;
                                   });
                                 },
                                 title: Text(
@@ -234,8 +236,14 @@ class _Step3ScreenState extends State<Step3Screen>
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        onPressed: _selectedVehicleType != null
+                        onPressed: _selectedVehicleTypeId != null
                             ? () {
+                                final selectedType = _vehicleTypes.firstWhere(
+                                  (e) => e.id == _selectedVehicleTypeId,
+                                );
+                                final vehicleIds = selectedType.vehicles
+                                    .map((v) => v.id)
+                                    .toList();
                                 Navigator.of(context).push(
                                   PageRouteBuilder(
                                     pageBuilder:
@@ -247,7 +255,11 @@ class _Step3ScreenState extends State<Step3Screen>
                                           firstName: widget.firstName,
                                           lastName: widget.lastName,
                                           numberOfWheels: widget.numberOfWheels,
-                                          vehicleType: _selectedVehicleType!,
+                                          vehicleType:
+                                              _selectedVehicleTypeName!,
+                                          vehicleTypeId:
+                                              _selectedVehicleTypeId!,
+                                          vehicleIds: vehicleIds,
                                         ),
                                     transitionsBuilder:
                                         (

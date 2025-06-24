@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:vehicle_rental_app/bloc/vehicle_type_bloc.dart';
 import 'package:vehicle_rental_app/screens/form_screens/step_3_screen.dart';
 
 class Step2Screen extends StatefulWidget {
@@ -19,9 +22,13 @@ class _Step2ScreenState extends State<Step2Screen>
   List<int> _wheelOptions = [];
   int? _selectedWheels;
   bool _loading = true;
+  String? _error;
 
   late AnimationController _progressController;
   late Animation<double> _progressAnimation;
+
+  late VehicleTypeBloc _bloc;
+  StreamSubscription? _blocSubscription;
 
   @override
   void initState() {
@@ -33,7 +40,26 @@ class _Step2ScreenState extends State<Step2Screen>
     _progressAnimation = Tween<double>(begin: 0.2, end: 0.4).animate(
       CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
     );
-    _fetchWheelOptions();
+    _bloc = VehicleTypeBloc();
+    _bloc.fetchVehicleTypes();
+    _blocSubscription = _bloc.state.listen((state) {
+      if (!mounted) return;
+      setState(() {
+        if (state is VehicleTypeLoading) {
+          _loading = true;
+          _error = null;
+        } else if (state is VehicleTypeLoaded) {
+          _loading = false;
+          _error = null;
+          // Extract unique wheel counts
+          _wheelOptions =
+              state.vehicleTypes.map((e) => e.wheels).toSet().toList()..sort();
+        } else if (state is VehicleTypeError) {
+          _loading = false;
+          _error = state.message;
+        }
+      });
+    });
   }
 
   @override
@@ -49,15 +75,9 @@ class _Step2ScreenState extends State<Step2Screen>
   @override
   void dispose() {
     _progressController.dispose();
+    _blocSubscription?.cancel();
+    _bloc.dispose();
     super.dispose();
-  }
-
-  Future<void> _fetchWheelOptions() async {
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() {
-      _wheelOptions = [2, 3, 4, 6, 8];
-      _loading = false;
-    });
   }
 
   @override
@@ -101,7 +121,7 @@ class _Step2ScreenState extends State<Step2Screen>
                   const SizedBox(height: 8),
                   if (_loading)
                     ...List.generate(
-                      4,
+                      3,
                       (index) => Container(
                         height: 48,
                         margin: const EdgeInsets.symmetric(vertical: 6),
@@ -109,6 +129,15 @@ class _Step2ScreenState extends State<Step2Screen>
                           color: Colors.white24,
                           borderRadius: BorderRadius.circular(12),
                         ),
+                      ),
+                    )
+                  else if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(color: Colors.red, fontSize: 16),
+                        textAlign: TextAlign.center,
                       ),
                     )
                   else
@@ -128,7 +157,7 @@ class _Step2ScreenState extends State<Step2Screen>
                                   });
                                 },
                                 title: Text(
-                                  '$option',
+                                  '$option Wheels',
                                   style: const TextStyle(color: Colors.white),
                                 ),
                                 activeColor: Colors.white,

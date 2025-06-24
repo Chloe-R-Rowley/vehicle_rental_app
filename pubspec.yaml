@@ -16,6 +16,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   skeletonizer: ^2.0.1
   lottie: ^2.7.0
+  http: ^1.4.0
+  sqflite: ^2.3.0
+  path_provider: ^2.1.2
 
 dev_dependencies:
   flutter_test:

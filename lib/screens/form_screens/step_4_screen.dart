@@ -1,28 +1,51 @@
 import 'package:flutter/material.dart';
-import 'package:vehicle_rental_app/screens/form_screens/step_4_screen.dart';
 
-class Step3Screen extends StatefulWidget {
-  const Step3Screen({super.key});
+class Step4Screen extends StatefulWidget {
+  final String vehicleType;
+  const Step4Screen({super.key, required this.vehicleType});
 
   @override
-  State<Step3Screen> createState() => _Step3ScreenState();
+  State<Step4Screen> createState() => _Step4ScreenState();
 }
 
-class _Step3ScreenState extends State<Step3Screen> {
-  List<String> _vehicleTypes = [];
-  String? _selectedVehicleType;
+class _Step4ScreenState extends State<Step4Screen> {
+  List<Map<String, String>> _modelOptions = [];
+  String? _selectedModel;
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchVehicleTypes();
+    _fetchModelOptions();
   }
 
-  Future<void> _fetchVehicleTypes() async {
+  Future<void> _fetchModelOptions() async {
     await Future.delayed(const Duration(seconds: 1));
+    final options = <String, List<Map<String, String>>>{
+      'Car': [
+        {'name': 'Sedan', 'image': 'assets/images/cars/sedan.png'},
+        {'name': 'SUV', 'image': 'assets/images/cars/suv.png'},
+        {'name': 'Hatchback', 'image': 'assets/images/cars/hatchback.png'},
+      ],
+      'Motorcycle': [
+        {'name': 'Sport Bike', 'image': 'assets/images/bikes/sportsbike.png'},
+        {'name': 'Cruiser', 'image': 'assets/images/bikes/cruiser.png'},
+      ],
+      'Truck': [
+        {'name': 'Pickup', 'image': 'assets/images/trucks/pickup.png'},
+        {'name': 'Lorry', 'image': 'assets/images/trucks/lorry.png'},
+      ],
+      'Bus': [
+        {'name': 'Mini Bus', 'image': 'assets/images/buses/minibus.png'},
+        {'name': 'Coach', 'image': 'assets/images/buses/coach.png'},
+      ],
+      'Van': [
+        {'name': 'Cargo Van', 'image': 'assets/images/vans/cargo.png'},
+        {'name': 'Minivan', 'image': 'assets/images/vans/minivan.png'},
+      ],
+    };
     setState(() {
-      _vehicleTypes = ['Car', 'Motorcycle', 'Truck', 'Bus', 'Van'];
+      _modelOptions = options[widget.vehicleType] ?? [];
       _loading = false;
     });
   }
@@ -51,30 +74,50 @@ class _Step3ScreenState extends State<Step3Screen> {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Vehicle Type',
+                      'Select Model',
                       style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ),
                   const SizedBox(height: 8),
                   if (!_loading)
                     Column(
-                      children: _vehicleTypes
+                      children: _modelOptions
                           .map(
-                            (type) => Padding(
+                            (model) => Padding(
                               padding: const EdgeInsets.symmetric(
                                 vertical: 6.0,
                               ),
                               child: RadioListTile<String>(
-                                value: type,
-                                groupValue: _selectedVehicleType,
+                                value: model['name']!,
+                                groupValue: _selectedModel,
                                 onChanged: (value) {
                                   setState(() {
-                                    _selectedVehicleType = value;
+                                    _selectedModel = value;
                                   });
                                 },
-                                title: Text(
-                                  type,
-                                  style: const TextStyle(color: Colors.white),
+                                title: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      model['name']!,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Image.asset(
+                                      model['image']!,
+                                      height: 200,
+                                      width: 200,
+                                      fit: BoxFit.contain,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              const Icon(
+                                                Icons.directions_car,
+                                                color: Colors.white,
+                                              ),
+                                    ),
+                                  ],
                                 ),
                                 activeColor: Colors.white,
                                 tileColor: Colors.white.withOpacity(0.10),
@@ -91,12 +134,12 @@ class _Step3ScreenState extends State<Step3Screen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Step 3 of 5',
+                        'Step 4 of 5',
                         style: TextStyle(color: Colors.white, fontSize: 16),
                       ),
                       const SizedBox(height: 8),
                       LinearProgressIndicator(
-                        value: 0.6,
+                        value: 0.8,
                         backgroundColor: Colors.white24,
                         valueColor: const AlwaysStoppedAnimation<Color>(
                           Colors.white,
@@ -117,18 +160,7 @@ class _Step3ScreenState extends State<Step3Screen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: _selectedVehicleType != null
-                          ? () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => Step4Screen(
-                                    vehicleType: _selectedVehicleType!,
-                                  ),
-                                ),
-                              );
-                            }
-                          : null,
+                      onPressed: _selectedModel != null ? () {} : null,
                       child: const Text(
                         'Next',
                         style: TextStyle(
@@ -138,6 +170,7 @@ class _Step3ScreenState extends State<Step3Screen> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 32),
                 ],
               ),
             ),

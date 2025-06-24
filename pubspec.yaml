@@ -1,7 +1,7 @@
 name: vehicle_rental_app
 description: "A new Flutter project."
 
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
@@ -21,11 +21,21 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 
 flutter:
-
   uses-material-design: true
 
   assets:
     - assets/logo/logo.png
+    - assets/images/cars/sedan.png
+    - assets/images/cars/suv.png
+    - assets/images/cars/hatchback.png
+    - assets/images/bikes/sportsbike.png
+    - assets/images/bikes/cruiser.png
+    - assets/images/trucks/pickup.png
+    - assets/images/trucks/lorry.png
+    - assets/images/buses/minibus.png
+    - assets/images/buses/coach.png
+    - assets/images/vans/cargo.png
+    - assets/images/vans/minivan.png
 
   # fonts:
   #   - family: Schyler

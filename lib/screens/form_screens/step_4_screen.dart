@@ -73,6 +73,16 @@ class _Step4ScreenState extends State<Step4Screen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _progressController.status == AnimationStatus.dismissed) {
+        _progressController.forward();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _progressController.dispose();
     _bloc?.dispose();

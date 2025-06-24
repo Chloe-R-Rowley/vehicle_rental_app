@@ -18,15 +18,42 @@ class Step4Screen extends StatefulWidget {
   State<Step4Screen> createState() => _Step4ScreenState();
 }
 
-class _Step4ScreenState extends State<Step4Screen> {
+class _Step4ScreenState extends State<Step4Screen>
+    with SingleTickerProviderStateMixin {
   List<Map<String, String>> _modelOptions = [];
   String? _selectedModel;
   bool _loading = true;
 
+  late AnimationController _progressController;
+  late Animation<double> _progressAnimation;
+
   @override
   void initState() {
     super.initState();
+    _progressController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _progressAnimation = Tween<double>(begin: 0.6, end: 0.8).animate(
+      CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
+    );
     _fetchModelOptions();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _progressController.status == AnimationStatus.dismissed) {
+        _progressController.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _progressController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchModelOptions() async {
@@ -83,19 +110,40 @@ class _Step4ScreenState extends State<Step4Screen> {
                   Image.asset('assets/logo/logo.png', height: 200),
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Select Model',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
+                    child: _loading
+                        ? Container(
+                            height: 20,
+                            width: 140,
+                            decoration: BoxDecoration(
+                              color: Colors.white24,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          )
+                        : Text(
+                            'Select Model',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
                   ),
                   const SizedBox(height: 8),
-                  if (!_loading)
+                  if (_loading)
+                    ...List.generate(
+                      2,
+                      (index) => Container(
+                        height: 120,
+                        margin: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    )
+                  else
                     Column(
                       children: _modelOptions
                           .map(
                             (model) => Padding(
                               padding: const EdgeInsets.symmetric(
-                                vertical: 6.0,
+                                vertical: 8.0,
                               ),
                               child: RadioListTile<String>(
                                 value: model['name']!,
@@ -148,69 +196,105 @@ class _Step4ScreenState extends State<Step4Screen> {
                         style: TextStyle(color: Colors.white, fontSize: 16),
                       ),
                       const SizedBox(height: 8),
-                      LinearProgressIndicator(
-                        value: 0.8,
-                        backgroundColor: Colors.white24,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Colors.white,
-                        ),
-                        minHeight: 8,
+                      AnimatedBuilder(
+                        animation: _progressController,
+                        builder: (context, child) {
+                          return LinearProgressIndicator(
+                            value: _progressAnimation.value,
+                            backgroundColor: Colors.white24,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                            minHeight: 8,
+                          );
+                        },
                       ),
                     ],
                   ),
-                  const SizedBox(height: 40),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color.fromARGB(255, 0, 149, 255),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                  const SizedBox(height: 32),
+                  if (_loading)
+                    Container(
+                      height: 48,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      onPressed: _selectedModel != null
-                          ? () {
-                              final selectedModel = _modelOptions.firstWhere(
-                                (m) => m['name'] == _selectedModel,
-                              );
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => Step5Screen(
-                                    firstName: widget.firstName,
-                                    lastName: widget.lastName,
-                                    numberOfWheels: widget.numberOfWheels,
-                                    vehicleType: widget.vehicleType,
-                                    modelName: selectedModel['name']!,
-                                    modelImage: selectedModel['image']!,
+                    )
+                  else
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color.fromARGB(
+                            255,
+                            0,
+                            149,
+                            255,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: _selectedModel != null
+                            ? () {
+                                final selectedModel = _modelOptions.firstWhere(
+                                  (m) => m['name'] == _selectedModel,
+                                );
+                                Navigator.of(context).push(
+                                  PageRouteBuilder(
+                                    pageBuilder:
+                                        (
+                                          context,
+                                          animation,
+                                          secondaryAnimation,
+                                        ) => Step5Screen(
+                                          firstName: widget.firstName,
+                                          lastName: widget.lastName,
+                                          numberOfWheels: widget.numberOfWheels,
+                                          vehicleType: widget.vehicleType,
+                                          modelName: selectedModel['name']!,
+                                          modelImage: selectedModel['image']!,
+                                        ),
+                                    transitionsBuilder:
+                                        (
+                                          context,
+                                          animation,
+                                          secondaryAnimation,
+                                          child,
+                                        ) {
+                                          const begin = Offset(1.0, 0.0);
+                                          const end = Offset.zero;
+                                          const curve = Curves.easeInOut;
+                                          final tween = Tween(
+                                            begin: begin,
+                                            end: end,
+                                          ).chain(CurveTween(curve: curve));
+                                          return SlideTransition(
+                                            position: animation.drive(tween),
+                                            child: child,
+                                          );
+                                        },
                                   ),
-                                ),
-                              );
-                            }
-                          : null,
-                      child: const Text(
-                        'Next',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                                );
+                              }
+                            : null,
+                        child: const Text(
+                          'Next',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   const SizedBox(height: 32),
                 ],
               ),
             ),
           ),
-          if (_loading)
-            Container(
-              color: const Color.fromARGB(180, 0, 149, 255),
-              child: const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              ),
-            ),
         ],
       ),
     );

@@ -23,9 +23,41 @@ class Step5Screen extends StatefulWidget {
   State<Step5Screen> createState() => _Step5ScreenState();
 }
 
-class _Step5ScreenState extends State<Step5Screen> {
+class _Step5ScreenState extends State<Step5Screen>
+    with SingleTickerProviderStateMixin {
   bool _loading = false;
   DateTimeRange? _selectedRange;
+
+  late AnimationController _progressController;
+  late Animation<double> _progressAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _progressController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _progressAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _progressController.status == AnimationStatus.dismissed) {
+        _progressController.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _progressController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickDateRange() async {
     final now = DateTime.now();
@@ -78,119 +110,148 @@ class _Step5ScreenState extends State<Step5Screen> {
                   const SizedBox(height: 24),
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Select Rental Dates',
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      GestureDetector(
-                        onTap: _pickDateRange,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 20,
-                            horizontal: 20,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                            border: Border.all(
-                              color: _selectedRange != null
-                                  ? const Color.fromARGB(255, 0, 149, 255)
-                                  : Colors.white24,
-                              width: 2,
+                    child: _loading
+                        ? Container(
+                            height: 20,
+                            width: 180,
+                            decoration: BoxDecoration(
+                              color: Colors.white24,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          )
+                        : Text(
+                            'Select Rental Dates',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
                             ),
                           ),
-                          child: Row(
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: const Color.fromARGB(
-                                    255,
-                                    0,
-                                    149,
-                                    255,
-                                  ).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                padding: const EdgeInsets.all(10),
-                                child: Icon(
-                                  Icons.calendar_month_rounded,
-                                  color: const Color.fromARGB(255, 0, 149, 255),
-                                  size: 32,
-                                ),
-                              ),
-                              const SizedBox(width: 18),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _selectedRange == null
-                                          ? 'Pick Date Range'
-                                          : 'Rental Dates',
-                                      style: TextStyle(
-                                        color: const Color.fromARGB(
-                                          255,
-                                          0,
-                                          149,
-                                          255,
-                                        ),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    _selectedRange == null
-                                        ? Text(
-                                            'Tap to select your rental period',
-                                            style: TextStyle(
-                                              color: Colors.grey[600],
-                                              fontSize: 14,
-                                            ),
-                                          )
-                                        : Text(
-                                            '${DateFormat('MMM d, yyyy').format(_selectedRange!.start)}  →  ${DateFormat('MMM d, yyyy').format(_selectedRange!.end)}',
-                                            style: const TextStyle(
-                                              color: Colors.black87,
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(
-                                Icons.chevron_right_rounded,
-                                color: Color.fromARGB(255, 0, 149, 255),
-                                size: 28,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      if (_selectedRange != null)
-                        Text(
-                          'Selected: ${DateFormat('yMMMd').format(_selectedRange!.start)} - ${DateFormat('yMMMd').format(_selectedRange!.end)}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
-                        ),
-                    ],
                   ),
+                  const SizedBox(height: 8),
+                  if (_loading)
+                    Container(
+                      height: 80,
+                      width: double.infinity,
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    )
+                  else
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: _pickDateRange,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 20,
+                              horizontal: 20,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                              border: Border.all(
+                                color: _selectedRange != null
+                                    ? const Color.fromARGB(255, 0, 149, 255)
+                                    : Colors.white24,
+                                width: 2,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromARGB(
+                                      255,
+                                      0,
+                                      149,
+                                      255,
+                                    ).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: const EdgeInsets.all(10),
+                                  child: Icon(
+                                    Icons.calendar_month_rounded,
+                                    color: const Color.fromARGB(
+                                      255,
+                                      0,
+                                      149,
+                                      255,
+                                    ),
+                                    size: 32,
+                                  ),
+                                ),
+                                const SizedBox(width: 18),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _selectedRange == null
+                                            ? 'Pick Date Range'
+                                            : 'Rental Dates',
+                                        style: TextStyle(
+                                          color: const Color.fromARGB(
+                                            255,
+                                            0,
+                                            149,
+                                            255,
+                                          ),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      _selectedRange == null
+                                          ? Text(
+                                              'Tap to select your rental period',
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 14,
+                                              ),
+                                            )
+                                          : Text(
+                                              '${DateFormat('MMM d, yyyy').format(_selectedRange!.start)}  →  ${DateFormat('MMM d, yyyy').format(_selectedRange!.end)}',
+                                              style: const TextStyle(
+                                                color: Colors.black87,
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: Color.fromARGB(255, 0, 149, 255),
+                                  size: 28,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        if (_selectedRange != null)
+                          Text(
+                            'Selected: ${DateFormat('yMMMd').format(_selectedRange!.start)} - ${DateFormat('yMMMd').format(_selectedRange!.end)}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
+                      ],
+                    ),
                   const SizedBox(height: 32),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,58 +261,101 @@ class _Step5ScreenState extends State<Step5Screen> {
                         style: TextStyle(color: Colors.white, fontSize: 16),
                       ),
                       const SizedBox(height: 8),
-                      LinearProgressIndicator(
-                        value: 1.0,
-                        backgroundColor: Colors.white24,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Colors.white,
-                        ),
-                        minHeight: 8,
+                      AnimatedBuilder(
+                        animation: _progressController,
+                        builder: (context, child) {
+                          return LinearProgressIndicator(
+                            value: _progressAnimation.value,
+                            backgroundColor: Colors.white24,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                            minHeight: 8,
+                          );
+                        },
                       ),
                     ],
                   ),
-                  const SizedBox(height: 40),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color.fromARGB(255, 0, 149, 255),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                  const SizedBox(height: 32),
+                  if (_loading)
+                    Container(
+                      height: 48,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      onPressed: _selectedRange != null
-                          ? () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => BookingCompleteScreen(
-                                    bookingDetails: BookingDetails(
-                                      firstName: widget.firstName,
-                                      lastName: widget.lastName,
-                                      numberOfWheels: widget.numberOfWheels,
-                                      vehicleType: widget.vehicleType,
-                                      modelName: widget.modelName,
-                                      modelImage: widget.modelImage,
-                                      rentalDates: _selectedRange!,
-                                    ),
+                    )
+                  else
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color.fromARGB(
+                            255,
+                            0,
+                            149,
+                            255,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: _selectedRange != null
+                            ? () {
+                                Navigator.of(context).push(
+                                  PageRouteBuilder(
+                                    pageBuilder:
+                                        (
+                                          context,
+                                          animation,
+                                          secondaryAnimation,
+                                        ) => BookingCompleteScreen(
+                                          bookingDetails: BookingDetails(
+                                            firstName: widget.firstName,
+                                            lastName: widget.lastName,
+                                            numberOfWheels:
+                                                widget.numberOfWheels,
+                                            vehicleType: widget.vehicleType,
+                                            modelName: widget.modelName,
+                                            modelImage: widget.modelImage,
+                                            rentalDates: _selectedRange!,
+                                          ),
+                                        ),
+                                    transitionsBuilder:
+                                        (
+                                          context,
+                                          animation,
+                                          secondaryAnimation,
+                                          child,
+                                        ) {
+                                          const begin = Offset(1.0, 0.0);
+                                          const end = Offset.zero;
+                                          const curve = Curves.easeInOut;
+                                          final tween = Tween(
+                                            begin: begin,
+                                            end: end,
+                                          ).chain(CurveTween(curve: curve));
+                                          return SlideTransition(
+                                            position: animation.drive(tween),
+                                            child: child,
+                                          );
+                                        },
                                   ),
-                                ),
-                              );
-                            }
-                          : null,
-                      child: const Text(
-                        'Finish',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                                );
+                              }
+                            : null,
+                        child: const Text(
+                          'Finish',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
                 ],
               ),
             ),

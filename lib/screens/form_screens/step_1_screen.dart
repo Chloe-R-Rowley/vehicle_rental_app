@@ -8,9 +8,15 @@ class Step1Screen extends StatefulWidget {
   State<Step1Screen> createState() => _Step1ScreenState();
 }
 
-class _Step1ScreenState extends State<Step1Screen> {
+class _Step1ScreenState extends State<Step1Screen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   void dispose() {
@@ -31,9 +37,8 @@ class _Step1ScreenState extends State<Step1Screen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Image.asset('assets/logo/logo.png', height: 250),
+                Image.asset('assets/logo/logo.png', height: 200),
                 const SizedBox(height: 32),
-                const SizedBox(height: 12),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -98,7 +103,7 @@ class _Step1ScreenState extends State<Step1Screen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -110,26 +115,65 @@ class _Step1ScreenState extends State<Step1Screen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onPressed: () {
+                    onPressed: () async {
                       final firstName = _firstNameController.text.trim();
                       final lastName = _lastNameController.text.trim();
-                      if (firstName.isEmpty || lastName.isEmpty) {
+                      if (firstName.isEmpty && lastName.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
+                            backgroundColor: Colors.white,
                             content: Text(
-                              'Please enter your first and last name.',
+                              'Please enter both your first and last name.',
+                              style: TextStyle(color: Colors.black),
+                            ),
+                          ),
+                        );
+                        return;
+                      } else if (firstName.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            backgroundColor: Colors.white,
+                            content: Text(
+                              'Please enter your first name.',
+                              style: TextStyle(color: Colors.black),
+                            ),
+                          ),
+                        );
+                        return;
+                      } else if (lastName.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            backgroundColor: Colors.white,
+                            content: Text(
+                              'Please enter your last name.',
+                              style: TextStyle(color: Colors.black),
                             ),
                           ),
                         );
                         return;
                       }
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => Step2Screen(
-                            firstName: firstName,
-                            lastName: lastName,
-                          ),
+                      await Navigator.of(context).push(
+                        PageRouteBuilder(
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) =>
+                                  Step2Screen(
+                                    firstName: firstName,
+                                    lastName: lastName,
+                                  ),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                const begin = Offset(1.0, 0.0);
+                                const end = Offset.zero;
+                                const curve = Curves.easeInOut;
+                                final tween = Tween(
+                                  begin: begin,
+                                  end: end,
+                                ).chain(CurveTween(curve: curve));
+                                return SlideTransition(
+                                  position: animation.drive(tween),
+                                  child: child,
+                                );
+                              },
                         ),
                       );
                     },

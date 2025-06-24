@@ -2,8 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:vehicle_rental_app/screens/form_screens/step_5_screen.dart';
 
 class Step4Screen extends StatefulWidget {
+  final String firstName;
+  final String lastName;
+  final int numberOfWheels;
   final String vehicleType;
-  const Step4Screen({super.key, required this.vehicleType});
+  const Step4Screen({
+    super.key,
+    required this.firstName,
+    required this.lastName,
+    required this.numberOfWheels,
+    required this.vehicleType,
+  });
 
   @override
   State<Step4Screen> createState() => _Step4ScreenState();
@@ -163,10 +172,20 @@ class _Step4ScreenState extends State<Step4Screen> {
                       ),
                       onPressed: _selectedModel != null
                           ? () {
+                              final selectedModel = _modelOptions.firstWhere(
+                                (m) => m['name'] == _selectedModel,
+                              );
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const Step5Screen(),
+                                  builder: (context) => Step5Screen(
+                                    firstName: widget.firstName,
+                                    lastName: widget.lastName,
+                                    numberOfWheels: widget.numberOfWheels,
+                                    vehicleType: widget.vehicleType,
+                                    modelName: selectedModel['name']!,
+                                    modelImage: selectedModel['image']!,
+                                  ),
                                 ),
                               );
                             }

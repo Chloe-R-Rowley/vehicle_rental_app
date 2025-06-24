@@ -1,8 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:vehicle_rental_app/screens/booking_complete_screen.dart';
 
 class Step5Screen extends StatefulWidget {
-  const Step5Screen({super.key});
+  final String firstName;
+  final String lastName;
+  final int numberOfWheels;
+  final String vehicleType;
+  final String modelName;
+  final String modelImage;
+  const Step5Screen({
+    super.key,
+    required this.firstName,
+    required this.lastName,
+    required this.numberOfWheels,
+    required this.vehicleType,
+    required this.modelName,
+    required this.modelImage,
+  });
 
   @override
   State<Step5Screen> createState() => _Step5ScreenState();
@@ -207,7 +222,26 @@ class _Step5ScreenState extends State<Step5Screen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: _selectedRange != null ? () {} : null,
+                      onPressed: _selectedRange != null
+                          ? () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => BookingCompleteScreen(
+                                    bookingDetails: BookingDetails(
+                                      firstName: widget.firstName,
+                                      lastName: widget.lastName,
+                                      numberOfWheels: widget.numberOfWheels,
+                                      vehicleType: widget.vehicleType,
+                                      modelName: widget.modelName,
+                                      modelImage: widget.modelImage,
+                                      rentalDates: _selectedRange!,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                          : null,
                       child: const Text(
                         'Finish',
                         style: TextStyle(

@@ -111,9 +111,26 @@ class _Step1ScreenState extends State<Step1Screen> {
                       ),
                     ),
                     onPressed: () {
+                      final firstName = _firstNameController.text.trim();
+                      final lastName = _lastNameController.text.trim();
+                      if (firstName.isEmpty || lastName.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Please enter your first and last name.',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const Step2Screen()),
+                        MaterialPageRoute(
+                          builder: (_) => Step2Screen(
+                            firstName: firstName,
+                            lastName: lastName,
+                          ),
+                        ),
                       );
                     },
                     child: const Text(

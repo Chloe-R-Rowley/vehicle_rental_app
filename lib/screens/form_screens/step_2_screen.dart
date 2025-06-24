@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:vehicle_rental_app/screens/form_screens/step_3_screen.dart';
 
 class Step2Screen extends StatefulWidget {
-  const Step2Screen({super.key});
+  final String firstName;
+  final String lastName;
+  const Step2Screen({
+    super.key,
+    required this.firstName,
+    required this.lastName,
+  });
 
   @override
   State<Step2Screen> createState() => _Step2ScreenState();
@@ -122,7 +128,11 @@ class _Step2ScreenState extends State<Step2Screen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const Step3Screen(),
+                                  builder: (_) => Step3Screen(
+                                    firstName: widget.firstName,
+                                    lastName: widget.lastName,
+                                    numberOfWheels: _selectedWheels!,
+                                  ),
                                 ),
                               );
                             }

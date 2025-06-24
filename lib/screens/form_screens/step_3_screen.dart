@@ -1,28 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:vehicle_rental_app/screens/form_screens/step_3_screen.dart';
 
-class Step2Screen extends StatefulWidget {
-  const Step2Screen({super.key});
+class Step3Screen extends StatefulWidget {
+  const Step3Screen({super.key});
 
   @override
-  State<Step2Screen> createState() => _Step2ScreenState();
+  State<Step3Screen> createState() => _Step3ScreenState();
 }
 
-class _Step2ScreenState extends State<Step2Screen> {
-  List<int> _wheelOptions = [];
-  int? _selectedWheels;
+class _Step3ScreenState extends State<Step3Screen> {
+  List<String> _vehicleTypes = [];
+  String? _selectedVehicleType;
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchWheelOptions();
+    _fetchVehicleTypes();
   }
 
-  Future<void> _fetchWheelOptions() async {
+  Future<void> _fetchVehicleTypes() async {
     await Future.delayed(const Duration(seconds: 1));
     setState(() {
-      _wheelOptions = [2, 3, 4, 6, 8];
+      _vehicleTypes = ['Car', 'Motorcycle', 'Truck', 'Bus', 'Van'];
       _loading = false;
     });
   }
@@ -51,29 +50,29 @@ class _Step2ScreenState extends State<Step2Screen> {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Number of Wheels',
+                      'Vehicle Type',
                       style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ),
                   const SizedBox(height: 8),
                   if (!_loading)
                     Column(
-                      children: _wheelOptions
+                      children: _vehicleTypes
                           .map(
-                            (option) => Padding(
+                            (type) => Padding(
                               padding: const EdgeInsets.symmetric(
                                 vertical: 6.0,
                               ),
-                              child: RadioListTile<int>(
-                                value: option,
-                                groupValue: _selectedWheels,
+                              child: RadioListTile<String>(
+                                value: type,
+                                groupValue: _selectedVehicleType,
                                 onChanged: (value) {
                                   setState(() {
-                                    _selectedWheels = value;
+                                    _selectedVehicleType = value;
                                   });
                                 },
                                 title: Text(
-                                  '$option',
+                                  type,
                                   style: const TextStyle(color: Colors.white),
                                 ),
                                 activeColor: Colors.white,
@@ -91,12 +90,12 @@ class _Step2ScreenState extends State<Step2Screen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Step 2 of 5',
+                        'Step 3 of 5',
                         style: TextStyle(color: Colors.white, fontSize: 16),
                       ),
                       const SizedBox(height: 8),
                       LinearProgressIndicator(
-                        value: 0.4,
+                        value: 0.6,
                         backgroundColor: Colors.white24,
                         valueColor: const AlwaysStoppedAnimation<Color>(
                           Colors.white,
@@ -117,16 +116,7 @@ class _Step2ScreenState extends State<Step2Screen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: _selectedWheels != null
-                          ? () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const Step3Screen(),
-                                ),
-                              );
-                            }
-                          : null,
+                      onPressed: _selectedVehicleType != null ? () {} : null,
                       child: const Text(
                         'Next',
                         style: TextStyle(

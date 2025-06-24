@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vehicle_rental_app/screens/form_screens/step_2_screen.dart';
 
 class Step1Screen extends StatefulWidget {
   const Step1Screen({super.key});
@@ -109,7 +110,12 @@ class _Step1ScreenState extends State<Step1Screen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const Step2Screen()),
+                      );
+                    },
                     child: const Text(
                       'Next',
                       style: TextStyle(

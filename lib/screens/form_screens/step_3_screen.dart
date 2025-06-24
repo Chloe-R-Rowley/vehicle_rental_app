@@ -104,6 +104,7 @@ class _Step3ScreenState extends State<Step3Screen>
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Image.asset('assets/logo/logo.png', height: 200),
+                  const SizedBox(height: 32),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: _loading

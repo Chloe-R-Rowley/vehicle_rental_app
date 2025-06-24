@@ -110,6 +110,7 @@ class _Step4ScreenState extends State<Step4Screen>
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Image.asset('assets/logo/logo.png', height: 200),
+                  const SizedBox(height: 32),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: _loading
@@ -306,7 +307,6 @@ class _Step4ScreenState extends State<Step4Screen>
                         ),
                       ),
                     ),
-                  const SizedBox(height: 32),
                 ],
               ),
             ),

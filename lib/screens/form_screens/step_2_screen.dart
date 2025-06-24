@@ -267,7 +267,6 @@ class _Step2ScreenState extends State<Step2Screen>
                         ),
                       ),
                     ),
-                  const SizedBox(height: 32),
                 ],
               ),
             ),

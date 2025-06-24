@@ -40,7 +40,6 @@ class _BookingCompleteScreenState extends State<BookingCompleteScreen> {
         setState(() {
           _animationDone = true;
         });
-        // Optional: add a short delay before fade-in
         await Future.delayed(const Duration(milliseconds: 150));
         if (mounted) {
           setState(() {
@@ -99,10 +98,9 @@ class _BookingCompleteScreenState extends State<BookingCompleteScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        Image.asset('assets/logo/logo.png', height: 100),
         const SizedBox(height: 32),
-        Image.asset('assets/logo/logo.png', height: 200),
-        const SizedBox(height: 24),
-        Text(
+        const Text(
           'Booking Complete!',
           style: TextStyle(
             color: Colors.white,
@@ -110,61 +108,111 @@ class _BookingCompleteScreenState extends State<BookingCompleteScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 24),
-        _buildDetailRow('First Name', bookingDetails.firstName),
-        _buildDetailRow('Last Name', bookingDetails.lastName),
-        _buildDetailRow(
-          'Number of Wheels',
-          bookingDetails.numberOfWheels.toString(),
-        ),
-        _buildDetailRow('Vehicle Type', bookingDetails.vehicleType),
-        const SizedBox(height: 16),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            'Model',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+        const SizedBox(height: 32),
+        Card(
+          color: Colors.white.withOpacity(0.12),
+          elevation: 0,
+          margin: const EdgeInsets.all(0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.10),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Image.asset(
-                bookingDetails.modelImage,
-                height: 80,
-                width: 80,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) =>
-                    const Icon(Icons.directions_car, color: Colors.white),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  bookingDetails.modelName,
-                  style: const TextStyle(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildIconDetailRow(
+                  Icons.person,
+                  'Name',
+                  '${bookingDetails.firstName} ${bookingDetails.lastName}',
+                ),
+                const Divider(color: Colors.white24, thickness: 1, height: 8),
+                _buildIconDetailRow(
+                  Icons.donut_large,
+                  'Number of Wheels',
+                  bookingDetails.numberOfWheels.toString(),
+                ),
+                const Divider(color: Colors.white24, thickness: 1, height: 8),
+                _buildIconDetailRow(
+                  Icons.directions_car,
+                  'Vehicle Type',
+                  bookingDetails.vehicleType,
+                ),
+                const Divider(color: Colors.white24, thickness: 1, height: 8),
+                Text(
+                  'Model :',
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.asset(
+                          bookingDetails.modelImage,
+                          height: 60,
+                          width: 60,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(
+                                Icons.directions_car,
+                                color: Colors.white,
+                                size: 40,
+                              ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          bookingDetails.modelName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Divider(color: Colors.white24, thickness: 1, height: 8),
+                Text(
+                  'Rental Dates :',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                _buildIconDetailRow(
+                  Icons.calendar_today,
+                  'Start Date',
+                  DateFormat(
+                    'MMM d, yyyy',
+                  ).format(bookingDetails.rentalDates.start),
+                ),
+                const Divider(color: Colors.white24, thickness: 1, height: 8),
+                _buildIconDetailRow(
+                  Icons.event_available,
+                  'End Date',
+                  DateFormat(
+                    'MMM d, yyyy',
+                  ).format(bookingDetails.rentalDates.end),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        _buildDetailRow(
-          'Rental Dates',
-          '${DateFormat('MMM d, yyyy').format(bookingDetails.rentalDates.start)} → ${DateFormat('MMM d, yyyy').format(bookingDetails.rentalDates.end)}',
         ),
         const SizedBox(height: 32),
         SizedBox(
@@ -187,32 +235,45 @@ class _BookingCompleteScreenState extends State<BookingCompleteScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 32),
       ],
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildIconDetailRow(IconData icon, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.18),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.all(6),
+            child: Icon(icon, color: Colors.white, size: 22),
+          ),
+          const SizedBox(width: 14),
           SizedBox(
-            width: 130,
+            width: 120,
             child: Text(
               label,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w400,
+              ),
             ),
           ),
         ],

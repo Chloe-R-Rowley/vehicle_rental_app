@@ -260,6 +260,7 @@ class _Step4ScreenState extends State<Step4Screen>
                                           lastName: widget.lastName,
                                           numberOfWheels: widget.numberOfWheels,
                                           vehicleType: widget.vehicleType,
+                                          modelId: selectedModel.id,
                                           modelName: selectedModel.name,
                                           modelImage: selectedModel.imageUrl,
                                         ),

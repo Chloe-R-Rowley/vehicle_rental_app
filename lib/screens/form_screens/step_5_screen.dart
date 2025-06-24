@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:vehicle_rental_app/screens/booking_complete_screen.dart';
+import '../../bloc/vehicle_booking_bloc.dart';
+import '../../models/vehicle_booking_model.dart';
 
 class Step5Screen extends StatefulWidget {
   final String firstName;
   final String lastName;
   final int numberOfWheels;
   final String vehicleType;
+  final String modelId;
   final String modelName;
   final String modelImage;
   const Step5Screen({
@@ -15,6 +18,7 @@ class Step5Screen extends StatefulWidget {
     required this.lastName,
     required this.numberOfWheels,
     required this.vehicleType,
+    required this.modelId,
     required this.modelName,
     required this.modelImage,
   });
@@ -31,6 +35,10 @@ class _Step5ScreenState extends State<Step5Screen>
   late AnimationController _progressController;
   late Animation<double> _progressAnimation;
 
+  late BookingBloc _bookingBloc;
+  List<BookingModel> _bookings = [];
+  BookingState _bookingState = BookingLoading();
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +49,21 @@ class _Step5ScreenState extends State<Step5Screen>
     _progressAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
     );
+    _bookingBloc = BookingBloc();
+    _fetchBookings();
+  }
+
+  void _fetchBookings() {
+    _bookingBloc.fetchBookings(widget.modelId);
+    _bookingBloc.state.listen((state) {
+      if (!mounted) return;
+      setState(() {
+        _bookingState = state;
+        if (state is BookingLoaded) {
+          _bookings = state.bookings;
+        }
+      });
+    });
   }
 
   @override
@@ -56,15 +79,25 @@ class _Step5ScreenState extends State<Step5Screen>
   @override
   void dispose() {
     _progressController.dispose();
+    _bookingBloc.dispose();
     super.dispose();
   }
 
+  bool _isDateBooked(DateTime day) {
+    for (final booking in _bookings) {
+      if (!day.isBefore(booking.startDate) && !day.isAfter(booking.endDate)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   Future<void> _pickDateRange() async {
-    final now = DateTime.now();
     final picked = await showDateRangePicker(
       context: context,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 365)),
+      firstDate: DateTime(2020, 1, 1),
+      lastDate: DateTime(2026, 12, 31),
+      selectableDayPredicate: (day, _, __) => !_isDateBooked(day),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -80,6 +113,29 @@ class _Step5ScreenState extends State<Step5Screen>
       },
     );
     if (picked != null) {
+      bool hasBooked = false;
+      for (
+        DateTime d = picked.start;
+        !d.isAfter(picked.end);
+        d = d.add(const Duration(days: 1))
+      ) {
+        if (_isDateBooked(d)) {
+          hasBooked = true;
+          break;
+        }
+      }
+      if (hasBooked) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Selected range includes unavailable dates.',
+              style: TextStyle(color: Colors.black),
+            ),
+            backgroundColor: Colors.white,
+          ),
+        );
+        return;
+      }
       setState(() {
         _selectedRange = picked;
       });
@@ -88,6 +144,8 @@ class _Step5ScreenState extends State<Step5Screen>
 
   @override
   Widget build(BuildContext context) {
+    final isBookingLoading = _bookingState is BookingLoading;
+    final isBookingError = _bookingState is BookingError;
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 0, 149, 255),
       appBar: AppBar(
@@ -108,25 +166,56 @@ class _Step5ScreenState extends State<Step5Screen>
                 children: [
                   Image.asset('assets/logo/logo.png', height: 200),
                   const SizedBox(height: 24),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: _loading
-                        ? Container(
-                            height: 20,
-                            width: 180,
-                            decoration: BoxDecoration(
-                              color: Colors.white24,
-                              borderRadius: BorderRadius.circular(8),
+                  if (isBookingLoading) ...[
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        height: 20,
+                        width: 180,
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        margin: const EdgeInsets.only(bottom: 8),
+                      ),
+                    ),
+                    Container(
+                      height: 80,
+                      width: double.infinity,
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ] else if (isBookingError)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        (_bookingState as BookingError).message,
+                        style: const TextStyle(color: Colors.red, fontSize: 16),
+                      ),
+                    )
+                  else
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: _loading
+                          ? Container(
+                              height: 20,
+                              width: 180,
+                              decoration: BoxDecoration(
+                                color: Colors.white24,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            )
+                          : Text(
+                              'Select Rental Dates',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
                             ),
-                          )
-                        : Text(
-                            'Select Rental Dates',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
-                          ),
-                  ),
+                    ),
                   const SizedBox(height: 8),
                   if (_loading)
                     Container(
@@ -138,12 +227,14 @@ class _Step5ScreenState extends State<Step5Screen>
                         borderRadius: BorderRadius.circular(12),
                       ),
                     )
-                  else
+                  else if (!isBookingLoading)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         GestureDetector(
-                          onTap: _pickDateRange,
+                          onTap: isBookingLoading || isBookingError
+                              ? null
+                              : _pickDateRange,
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(
@@ -215,7 +306,11 @@ class _Step5ScreenState extends State<Step5Screen>
                                       const SizedBox(height: 4),
                                       _selectedRange == null
                                           ? Text(
-                                              'Tap to select your rental period',
+                                              isBookingLoading
+                                                  ? 'Loading bookings...'
+                                                  : isBookingError
+                                                  ? 'Error loading bookings'
+                                                  : 'Tap to select your rental period',
                                               style: TextStyle(
                                                 color: Colors.grey[600],
                                                 fontSize: 14,

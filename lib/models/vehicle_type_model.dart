@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 class VehicleTypeModel {
   final String id;
   final String name;
@@ -37,30 +35,6 @@ class VehicleTypeModel {
       'type': type,
       'vehicles': vehicles.map((v) => v.toJson()).toList(),
     };
-  }
-
-  Map<String, dynamic> toDbJson() {
-    return {
-      'id': id,
-      'name': name,
-      'wheels': wheels,
-      'type': type,
-      'vehicles': jsonEncode(vehicles.map((v) => v.toJson()).toList()),
-    };
-  }
-
-  factory VehicleTypeModel.fromDbJson(Map<String, dynamic> json) {
-    return VehicleTypeModel(
-      id: json['id'],
-      name: json['name'],
-      wheels: json['wheels'],
-      type: json['type'],
-      vehicles: (json['vehicles'] != null)
-          ? (jsonDecode(json['vehicles']) as List<dynamic>)
-                .map((v) => Vehicle.fromJson(v))
-                .toList()
-          : [],
-    );
   }
 }
 

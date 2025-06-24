@@ -22,16 +22,4 @@ class VehicleDetailModel {
   Map<String, dynamic> toJson() {
     return {'id': id, 'name': name, 'imageUrl': imageUrl};
   }
-
-  Map<String, dynamic> toDbJson() {
-    return {'id': id, 'name': name, 'imageUrl': imageUrl};
-  }
-
-  factory VehicleDetailModel.fromDbJson(Map<String, dynamic> json) {
-    return VehicleDetailModel(
-      id: json['id'],
-      name: json['name'],
-      imageUrl: json['imageUrl'],
-    );
-  }
 }

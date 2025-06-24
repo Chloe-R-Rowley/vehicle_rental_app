@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vehicle_rental_app/screens/form_screens/step_5_screen.dart';
 
 class Step4Screen extends StatefulWidget {
   final String vehicleType;
@@ -160,7 +161,16 @@ class _Step4ScreenState extends State<Step4Screen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: _selectedModel != null ? () {} : null,
+                      onPressed: _selectedModel != null
+                          ? () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const Step5Screen(),
+                                ),
+                              );
+                            }
+                          : null,
                       child: const Text(
                         'Next',
                         style: TextStyle(

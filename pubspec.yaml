@@ -15,6 +15,7 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   skeletonizer: ^2.0.1
+  lottie: ^2.7.0
 
 dev_dependencies:
   flutter_test:
@@ -38,6 +39,7 @@ flutter:
     - assets/images/buses/coach.png
     - assets/images/vans/cargo.png
     - assets/images/vans/minivan.png
+    - assets/animations/booking_completed_animation.json
 
   # fonts:
   #   - family: Schyler

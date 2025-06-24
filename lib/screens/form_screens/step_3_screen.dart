@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:vehicle_rental_app/bloc/vehicle_type_bloc.dart';
+import 'package:vehicle_rental_app/models/vehicle_type_model.dart';
 import 'package:vehicle_rental_app/screens/form_screens/step_4_screen.dart';
 
 class Step3Screen extends StatefulWidget {
@@ -18,12 +21,16 @@ class Step3Screen extends StatefulWidget {
 
 class _Step3ScreenState extends State<Step3Screen>
     with SingleTickerProviderStateMixin {
-  List<String> _vehicleTypes = [];
+  List<VehicleTypeModel> _vehicleTypes = [];
   String? _selectedVehicleType;
   bool _loading = true;
+  String? _error;
 
   late AnimationController _progressController;
   late Animation<double> _progressAnimation;
+
+  late VehicleTypeBloc _bloc;
+  StreamSubscription? _blocSubscription;
 
   @override
   void initState() {
@@ -35,7 +42,26 @@ class _Step3ScreenState extends State<Step3Screen>
     _progressAnimation = Tween<double>(begin: 0.4, end: 0.6).animate(
       CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
     );
-    _fetchVehicleTypes();
+    _bloc = VehicleTypeBloc();
+    _bloc.fetchVehicleTypes();
+    _blocSubscription = _bloc.state.listen((state) {
+      if (!mounted) return;
+      setState(() {
+        if (state is VehicleTypeLoading) {
+          _loading = true;
+          _error = null;
+        } else if (state is VehicleTypeLoaded) {
+          _loading = false;
+          _error = null;
+          _vehicleTypes = state.vehicleTypes
+              .where((e) => e.wheels == widget.numberOfWheels)
+              .toList();
+        } else if (state is VehicleTypeError) {
+          _loading = false;
+          _error = state.message;
+        }
+      });
+    });
   }
 
   @override
@@ -51,15 +77,9 @@ class _Step3ScreenState extends State<Step3Screen>
   @override
   void dispose() {
     _progressController.dispose();
+    _blocSubscription?.cancel();
+    _bloc.dispose();
     super.dispose();
-  }
-
-  Future<void> _fetchVehicleTypes() async {
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() {
-      _vehicleTypes = ['Car', 'Motorcycle', 'Truck', 'Bus', 'Van'];
-      _loading = false;
-    });
   }
 
   @override
@@ -102,7 +122,7 @@ class _Step3ScreenState extends State<Step3Screen>
                   const SizedBox(height: 8),
                   if (_loading)
                     ...List.generate(
-                      4,
+                      1,
                       (index) => Container(
                         height: 48,
                         margin: const EdgeInsets.symmetric(vertical: 6),
@@ -110,6 +130,27 @@ class _Step3ScreenState extends State<Step3Screen>
                           color: Colors.white24,
                           borderRadius: BorderRadius.circular(12),
                         ),
+                      ),
+                    )
+                  else if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(color: Colors.red, fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  else if (_vehicleTypes.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Text(
+                        'No vehicle types found for ${widget.numberOfWheels} wheels.',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                     )
                   else
@@ -121,7 +162,7 @@ class _Step3ScreenState extends State<Step3Screen>
                                 vertical: 8.0,
                               ),
                               child: RadioListTile<String>(
-                                value: type,
+                                value: type.name,
                                 groupValue: _selectedVehicleType,
                                 onChanged: (value) {
                                   setState(() {
@@ -129,7 +170,7 @@ class _Step3ScreenState extends State<Step3Screen>
                                   });
                                 },
                                 title: Text(
-                                  type,
+                                  type.name,
                                   style: const TextStyle(color: Colors.white),
                                 ),
                                 activeColor: Colors.white,

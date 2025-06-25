@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vehicle_rental_app/screens/form_screens/step_2_screen.dart';
+import 'package:vehicle_rental_app/models/step_data_db.dart';
+import 'package:vehicle_rental_app/models/step_data_model.dart';
 
 class Step1Screen extends StatefulWidget {
   const Step1Screen({super.key});
@@ -16,6 +18,18 @@ class _Step1ScreenState extends State<Step1Screen>
   @override
   void initState() {
     super.initState();
+    _loadSavedData();
+  }
+
+  Future<void> _loadSavedData() async {
+    final firstNameData = await StepDataDB().getStepData('firstName');
+    final lastNameData = await StepDataDB().getStepData('lastName');
+    if (firstNameData != null) {
+      _firstNameController.text = firstNameData.value;
+    }
+    if (lastNameData != null) {
+      _lastNameController.text = lastNameData.value;
+    }
   }
 
   @override
@@ -152,14 +166,18 @@ class _Step1ScreenState extends State<Step1Screen>
                         );
                         return;
                       }
+                      // Store in SQLite
+                      await StepDataDB().insertOrUpdateStepData(
+                        StepData(key: 'firstName', value: firstName),
+                      );
+                      await StepDataDB().insertOrUpdateStepData(
+                        StepData(key: 'lastName', value: lastName),
+                      );
                       await Navigator.of(context).push(
                         PageRouteBuilder(
                           pageBuilder:
                               (context, animation, secondaryAnimation) =>
-                                  Step2Screen(
-                                    firstName: firstName,
-                                    lastName: lastName,
-                                  ),
+                                  Step2Screen(),
                           transitionsBuilder:
                               (context, animation, secondaryAnimation, child) {
                                 const begin = Offset(1.0, 0.0);

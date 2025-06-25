@@ -2,23 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:vehicle_rental_app/screens/form_screens/step_5_screen.dart';
 import 'package:vehicle_rental_app/bloc/vehicle_detail_bloc.dart';
 import 'package:vehicle_rental_app/models/vehicle_detail_model.dart';
+import 'package:vehicle_rental_app/models/step_data_db.dart';
+import 'package:vehicle_rental_app/models/step_data_model.dart';
 
 class Step4Screen extends StatefulWidget {
-  final String firstName;
-  final String lastName;
-  final int numberOfWheels;
-  final String vehicleType;
-  final String vehicleTypeId;
-  final List<String> vehicleIds;
-  const Step4Screen({
-    super.key,
-    required this.firstName,
-    required this.lastName,
-    required this.numberOfWheels,
-    required this.vehicleType,
-    required this.vehicleTypeId,
-    required this.vehicleIds,
-  });
+  const Step4Screen({super.key});
 
   @override
   State<Step4Screen> createState() => _Step4ScreenState();
@@ -26,7 +14,6 @@ class Step4Screen extends StatefulWidget {
 
 class _Step4ScreenState extends State<Step4Screen>
     with SingleTickerProviderStateMixin {
-  List<Map<String, String>> _modelOptions = [];
   List<VehicleDetailModel> _models = [];
   String? _selectedModelId;
   bool _loading = true;
@@ -38,6 +25,8 @@ class _Step4ScreenState extends State<Step4Screen>
   VehicleDetailBloc? _bloc;
   Stream<VehicleDetailState>? _blocStream;
 
+  List<String> _vehicleIds = [];
+
   @override
   void initState() {
     super.initState();
@@ -48,28 +37,57 @@ class _Step4ScreenState extends State<Step4Screen>
     _progressAnimation = Tween<double>(begin: 0.6, end: 0.8).animate(
       CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
     );
-    _bloc = VehicleDetailBloc();
-    _blocStream = _bloc!.state;
-    _bloc!.fetchMultipleVehicleDetails(widget.vehicleIds);
-    _blocStream!.listen((state) {
-      if (!mounted) return;
-      if (state is VehicleDetailLoading) {
-        setState(() {
-          _loading = true;
-        });
-      } else if (state is VehicleModelsLoaded) {
-        setState(() {
-          _loading = false;
-          _models = state.models;
-          _error = null;
-        });
-      } else if (state is VehicleDetailError) {
-        setState(() {
-          _loading = false;
-          _error = state.message;
-        });
+    _loadAllDataAndFetchModels();
+  }
+
+  Future<void> _loadAllDataAndFetchModels() async {
+    final vehicleIdsData = await StepDataDB().getStepData('vehicleIds');
+    final modelIdData = await StepDataDB().getStepData('modelId');
+
+    setState(() {
+      if (vehicleIdsData != null) {
+        final raw = vehicleIdsData.value;
+        _vehicleIds = raw
+            .replaceAll('[', '')
+            .replaceAll(']', '')
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
+      if (modelIdData != null) {
+        _selectedModelId = modelIdData.value;
       }
     });
+    _bloc = VehicleDetailBloc();
+    _blocStream = _bloc!.state;
+    if (_vehicleIds.isNotEmpty) {
+      _bloc!.fetchMultipleVehicleDetails(_vehicleIds);
+      _blocStream!.listen((state) {
+        if (!mounted) return;
+        if (state is VehicleDetailLoading) {
+          setState(() {
+            _loading = true;
+          });
+        } else if (state is VehicleModelsLoaded) {
+          setState(() {
+            _loading = false;
+            _models = state.models;
+            _error = null;
+          });
+        } else if (state is VehicleDetailError) {
+          setState(() {
+            _loading = false;
+            _error = state.message;
+          });
+        }
+      });
+    } else {
+      setState(() {
+        _loading = false;
+        _error = 'No vehicle IDs found.';
+      });
+    }
   }
 
   @override
@@ -255,9 +273,27 @@ class _Step4ScreenState extends State<Step4Screen>
                           ),
                         ),
                         onPressed: _selectedModelId != null
-                            ? () {
+                            ? () async {
                                 final selectedModel = _models.firstWhere(
                                   (m) => m.id == _selectedModelId,
+                                );
+                                await StepDataDB().insertOrUpdateStepData(
+                                  StepData(
+                                    key: 'modelId',
+                                    value: selectedModel.id,
+                                  ),
+                                );
+                                await StepDataDB().insertOrUpdateStepData(
+                                  StepData(
+                                    key: 'modelName',
+                                    value: selectedModel.name,
+                                  ),
+                                );
+                                await StepDataDB().insertOrUpdateStepData(
+                                  StepData(
+                                    key: 'modelImage',
+                                    value: selectedModel.imageUrl,
+                                  ),
                                 );
                                 Navigator.of(context).push(
                                   PageRouteBuilder(
@@ -266,15 +302,7 @@ class _Step4ScreenState extends State<Step4Screen>
                                           context,
                                           animation,
                                           secondaryAnimation,
-                                        ) => Step5Screen(
-                                          firstName: widget.firstName,
-                                          lastName: widget.lastName,
-                                          numberOfWheels: widget.numberOfWheels,
-                                          vehicleType: widget.vehicleType,
-                                          modelId: selectedModel.id,
-                                          modelName: selectedModel.name,
-                                          modelImage: selectedModel.imageUrl,
-                                        ),
+                                        ) => Step5Screen(),
                                     transitionsBuilder:
                                         (
                                           context,

@@ -3,17 +3,11 @@ import 'dart:async';
 import 'package:vehicle_rental_app/bloc/vehicle_type_bloc.dart';
 import 'package:vehicle_rental_app/models/vehicle_type_model.dart';
 import 'package:vehicle_rental_app/screens/form_screens/step_4_screen.dart';
+import 'package:vehicle_rental_app/models/step_data_db.dart';
+import 'package:vehicle_rental_app/models/step_data_model.dart';
 
 class Step3Screen extends StatefulWidget {
-  final String firstName;
-  final String lastName;
-  final int numberOfWheels;
-  const Step3Screen({
-    super.key,
-    required this.firstName,
-    required this.lastName,
-    required this.numberOfWheels,
-  });
+  const Step3Screen({super.key});
 
   @override
   State<Step3Screen> createState() => _Step3ScreenState();
@@ -26,6 +20,7 @@ class _Step3ScreenState extends State<Step3Screen>
   String? _selectedVehicleTypeName;
   bool _loading = true;
   String? _error;
+  int? _numberOfWheels;
 
   late AnimationController _progressController;
   late Animation<double> _progressAnimation;
@@ -44,7 +39,6 @@ class _Step3ScreenState extends State<Step3Screen>
       CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
     );
     _bloc = VehicleTypeBloc();
-    _bloc.fetchVehicleTypes();
     _blocSubscription = _bloc.state.listen((state) {
       if (!mounted) return;
       setState(() {
@@ -54,15 +48,38 @@ class _Step3ScreenState extends State<Step3Screen>
         } else if (state is VehicleTypeLoaded) {
           _loading = false;
           _error = null;
-          _vehicleTypes = state.vehicleTypes
-              .where((e) => e.wheels == widget.numberOfWheels)
-              .toList();
+          if (_numberOfWheels != null) {
+            _vehicleTypes = state.vehicleTypes
+                .where((e) => e.wheels == _numberOfWheels)
+                .toList();
+          }
         } else if (state is VehicleTypeError) {
           _loading = false;
           _error = state.message;
         }
       });
     });
+    _loadSavedData();
+  }
+
+  Future<void> _loadSavedData() async {
+    final typeData = await StepDataDB().getStepData('vehicleType');
+    final typeIdData = await StepDataDB().getStepData('vehicleTypeId');
+    final wheelsData = await StepDataDB().getStepData('numberOfWheels');
+    int? loadedWheels;
+    if (wheelsData != null) {
+      loadedWheels = int.tryParse(wheelsData.value);
+    }
+    setState(() {
+      if (typeData != null && typeIdData != null) {
+        _selectedVehicleTypeName = typeData.value;
+        _selectedVehicleTypeId = typeIdData.value;
+      }
+      _numberOfWheels = loadedWheels;
+    });
+    if (loadedWheels != null) {
+      _bloc.fetchVehicleTypes();
+    }
   }
 
   @override
@@ -147,7 +164,7 @@ class _Step3ScreenState extends State<Step3Screen>
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
                       child: Text(
-                        'No vehicle types found for ${widget.numberOfWheels} wheels.',
+                        'No vehicle types found for ${_numberOfWheels ?? ''} wheels.',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -238,13 +255,32 @@ class _Step3ScreenState extends State<Step3Screen>
                           ),
                         ),
                         onPressed: _selectedVehicleTypeId != null
-                            ? () {
+                            ? () async {
                                 final selectedType = _vehicleTypes.firstWhere(
                                   (e) => e.id == _selectedVehicleTypeId,
                                 );
                                 final vehicleIds = selectedType.vehicles
                                     .map((v) => v.id)
                                     .toList();
+                                // Store in SQLite
+                                await StepDataDB().insertOrUpdateStepData(
+                                  StepData(
+                                    key: 'vehicleType',
+                                    value: _selectedVehicleTypeName!,
+                                  ),
+                                );
+                                await StepDataDB().insertOrUpdateStepData(
+                                  StepData(
+                                    key: 'vehicleTypeId',
+                                    value: _selectedVehicleTypeId!,
+                                  ),
+                                );
+                                await StepDataDB().insertOrUpdateStepData(
+                                  StepData(
+                                    key: 'vehicleIds',
+                                    value: vehicleIds.toString(),
+                                  ),
+                                );
                                 Navigator.of(context).push(
                                   PageRouteBuilder(
                                     pageBuilder:
@@ -252,16 +288,7 @@ class _Step3ScreenState extends State<Step3Screen>
                                           context,
                                           animation,
                                           secondaryAnimation,
-                                        ) => Step4Screen(
-                                          firstName: widget.firstName,
-                                          lastName: widget.lastName,
-                                          numberOfWheels: widget.numberOfWheels,
-                                          vehicleType:
-                                              _selectedVehicleTypeName!,
-                                          vehicleTypeId:
-                                              _selectedVehicleTypeId!,
-                                          vehicleIds: vehicleIds,
-                                        ),
+                                        ) => Step4Screen(),
                                     transitionsBuilder:
                                         (
                                           context,

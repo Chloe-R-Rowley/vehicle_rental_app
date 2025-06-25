@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:vehicle_rental_app/models/step_data_db.dart';
+import 'package:vehicle_rental_app/screens/form_screens/step_1_screen.dart';
 
 class BookingDetails {
   final String firstName;
@@ -23,8 +25,7 @@ class BookingDetails {
 }
 
 class BookingCompleteScreen extends StatefulWidget {
-  final BookingDetails bookingDetails;
-  const BookingCompleteScreen({super.key, required this.bookingDetails});
+  const BookingCompleteScreen({super.key});
 
   @override
   State<BookingCompleteScreen> createState() => _BookingCompleteScreenState();
@@ -33,6 +34,47 @@ class BookingCompleteScreen extends StatefulWidget {
 class _BookingCompleteScreenState extends State<BookingCompleteScreen> {
   bool _animationDone = false;
   bool _showDetails = false;
+  BookingDetails? _bookingDetails;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBookingDetails();
+  }
+
+  Future<void> _loadBookingDetails() async {
+    final firstNameData = await StepDataDB().getStepData('firstName');
+    final lastNameData = await StepDataDB().getStepData('lastName');
+    final wheelsData = await StepDataDB().getStepData('numberOfWheels');
+    final vehicleTypeData = await StepDataDB().getStepData('vehicleType');
+    final modelNameData = await StepDataDB().getStepData('modelName');
+    final modelImageData = await StepDataDB().getStepData('modelImage');
+    final rentalStartData = await StepDataDB().getStepData('rentalStart');
+    final rentalEndData = await StepDataDB().getStepData('rentalEnd');
+    if (firstNameData != null &&
+        lastNameData != null &&
+        wheelsData != null &&
+        vehicleTypeData != null &&
+        modelNameData != null &&
+        modelImageData != null &&
+        rentalStartData != null &&
+        rentalEndData != null) {
+      setState(() {
+        _bookingDetails = BookingDetails(
+          firstName: firstNameData.value,
+          lastName: lastNameData.value,
+          numberOfWheels: int.tryParse(wheelsData.value) ?? 0,
+          vehicleType: vehicleTypeData.value,
+          modelName: modelNameData.value,
+          modelImage: modelImageData.value,
+          rentalDates: DateTimeRange(
+            start: DateTime.parse(rentalStartData.value),
+            end: DateTime.parse(rentalEndData.value),
+          ),
+        );
+      });
+    }
+  }
 
   void _onLottieLoaded(Duration duration) {
     Future.delayed(duration, () async {
@@ -62,7 +104,9 @@ class _BookingCompleteScreenState extends State<BookingCompleteScreen> {
                   opacity: _showDetails ? 1.0 : 0.0,
                   duration: const Duration(milliseconds: 600),
                   curve: Curves.easeIn,
-                  child: _buildDetails(context),
+                  child: _bookingDetails == null
+                      ? const CircularProgressIndicator()
+                      : _buildDetails(context, _bookingDetails!),
                 )
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -92,8 +136,7 @@ class _BookingCompleteScreenState extends State<BookingCompleteScreen> {
     );
   }
 
-  Widget _buildDetails(BuildContext context) {
-    final bookingDetails = widget.bookingDetails;
+  Widget _buildDetails(BuildContext context, BookingDetails bookingDetails) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -158,7 +201,7 @@ class _BookingCompleteScreenState extends State<BookingCompleteScreen> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: Image.asset(
+                        child: Image.network(
                           bookingDetails.modelImage,
                           height: 60,
                           width: 60,
@@ -226,8 +269,12 @@ class _BookingCompleteScreenState extends State<BookingCompleteScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: () {
-              Navigator.of(context).popUntil((route) => route.isFirst);
+            onPressed: () async {
+              await StepDataDB().clearAll();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const Step1Screen()),
+                (route) => false,
+              );
             },
             child: const Text(
               'Back to Home',

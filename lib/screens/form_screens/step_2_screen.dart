@@ -3,15 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:vehicle_rental_app/bloc/vehicle_type_bloc.dart';
 import 'package:vehicle_rental_app/screens/form_screens/step_3_screen.dart';
+import 'package:vehicle_rental_app/models/step_data_db.dart';
+import 'package:vehicle_rental_app/models/step_data_model.dart';
 
 class Step2Screen extends StatefulWidget {
-  final String firstName;
-  final String lastName;
-  const Step2Screen({
-    super.key,
-    required this.firstName,
-    required this.lastName,
-  });
+  const Step2Screen({super.key});
 
   @override
   State<Step2Screen> createState() => _Step2ScreenState();
@@ -51,7 +47,6 @@ class _Step2ScreenState extends State<Step2Screen>
         } else if (state is VehicleTypeLoaded) {
           _loading = false;
           _error = null;
-          // Extract unique wheel counts
           _wheelOptions =
               state.vehicleTypes.map((e) => e.wheels).toSet().toList()..sort();
         } else if (state is VehicleTypeError) {
@@ -60,6 +55,16 @@ class _Step2ScreenState extends State<Step2Screen>
         }
       });
     });
+    _loadSavedData();
+  }
+
+  Future<void> _loadSavedData() async {
+    final wheelsData = await StepDataDB().getStepData('numberOfWheels');
+    if (wheelsData != null) {
+      setState(() {
+        _selectedWheels = int.tryParse(wheelsData.value);
+      });
+    }
   }
 
   @override
@@ -222,7 +227,13 @@ class _Step2ScreenState extends State<Step2Screen>
                           ),
                         ),
                         onPressed: _selectedWheels != null
-                            ? () {
+                            ? () async {
+                                await StepDataDB().insertOrUpdateStepData(
+                                  StepData(
+                                    key: 'numberOfWheels',
+                                    value: _selectedWheels.toString(),
+                                  ),
+                                );
                                 Navigator.of(context).push(
                                   PageRouteBuilder(
                                     pageBuilder:
@@ -230,11 +241,7 @@ class _Step2ScreenState extends State<Step2Screen>
                                           context,
                                           animation,
                                           secondaryAnimation,
-                                        ) => Step3Screen(
-                                          firstName: widget.firstName,
-                                          lastName: widget.lastName,
-                                          numberOfWheels: _selectedWheels!,
-                                        ),
+                                        ) => Step3Screen(),
                                     transitionsBuilder:
                                         (
                                           context,

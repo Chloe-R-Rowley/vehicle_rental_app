@@ -3,25 +3,11 @@ import 'package:intl/intl.dart';
 import 'package:vehicle_rental_app/screens/booking_complete_screen.dart';
 import '../../bloc/vehicle_booking_bloc.dart';
 import '../../models/vehicle_booking_model.dart';
+import 'package:vehicle_rental_app/models/step_data_db.dart';
+import 'package:vehicle_rental_app/models/step_data_model.dart';
 
 class Step5Screen extends StatefulWidget {
-  final String firstName;
-  final String lastName;
-  final int numberOfWheels;
-  final String vehicleType;
-  final String modelId;
-  final String modelName;
-  final String modelImage;
-  const Step5Screen({
-    super.key,
-    required this.firstName,
-    required this.lastName,
-    required this.numberOfWheels,
-    required this.vehicleType,
-    required this.modelId,
-    required this.modelName,
-    required this.modelImage,
-  });
+  const Step5Screen({super.key});
 
   @override
   State<Step5Screen> createState() => _Step5ScreenState();
@@ -39,6 +25,8 @@ class _Step5ScreenState extends State<Step5Screen>
   List<BookingModel> _bookings = [];
   BookingState _bookingState = BookingLoading();
 
+  String? _modelId;
+
   @override
   void initState() {
     super.initState();
@@ -49,12 +37,24 @@ class _Step5ScreenState extends State<Step5Screen>
     _progressAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
     );
-    _bookingBloc = BookingBloc();
-    _fetchBookings();
+    _loadAllDataAndFetchBookings();
+    _loadSavedData();
   }
 
-  void _fetchBookings() {
-    _bookingBloc.fetchBookings(widget.modelId);
+  Future<void> _loadAllDataAndFetchBookings() async {
+    final modelIdData = await StepDataDB().getStepData('modelId');
+
+    setState(() {
+      _modelId = modelIdData?.value;
+    });
+    if (_modelId != null) {
+      _bookingBloc = BookingBloc();
+      _fetchBookings(_modelId!);
+    }
+  }
+
+  void _fetchBookings(String modelId) {
+    _bookingBloc.fetchBookings(modelId);
     _bookingBloc.state.listen((state) {
       if (!mounted) return;
       setState(() {
@@ -64,6 +64,19 @@ class _Step5ScreenState extends State<Step5Screen>
         }
       });
     });
+  }
+
+  Future<void> _loadSavedData() async {
+    final startData = await StepDataDB().getStepData('rentalStart');
+    final endData = await StepDataDB().getStepData('rentalEnd');
+    if (startData != null && endData != null) {
+      setState(() {
+        _selectedRange = DateTimeRange(
+          start: DateTime.parse(startData.value),
+          end: DateTime.parse(endData.value),
+        );
+      });
+    }
   }
 
   @override
@@ -399,26 +412,29 @@ class _Step5ScreenState extends State<Step5Screen>
                           ),
                         ),
                         onPressed: _selectedRange != null
-                            ? () {
-                                Navigator.of(context).push(
+                            ? () async {
+                                await StepDataDB().insertOrUpdateStepData(
+                                  StepData(
+                                    key: 'rentalStart',
+                                    value: _selectedRange!.start
+                                        .toIso8601String(),
+                                  ),
+                                );
+                                await StepDataDB().insertOrUpdateStepData(
+                                  StepData(
+                                    key: 'rentalEnd',
+                                    value: _selectedRange!.end
+                                        .toIso8601String(),
+                                  ),
+                                );
+                                Navigator.of(context).pushAndRemoveUntil(
                                   PageRouteBuilder(
                                     pageBuilder:
                                         (
                                           context,
                                           animation,
                                           secondaryAnimation,
-                                        ) => BookingCompleteScreen(
-                                          bookingDetails: BookingDetails(
-                                            firstName: widget.firstName,
-                                            lastName: widget.lastName,
-                                            numberOfWheels:
-                                                widget.numberOfWheels,
-                                            vehicleType: widget.vehicleType,
-                                            modelName: widget.modelName,
-                                            modelImage: widget.modelImage,
-                                            rentalDates: _selectedRange!,
-                                          ),
-                                        ),
+                                        ) => BookingCompleteScreen(),
                                     transitionsBuilder:
                                         (
                                           context,
@@ -439,6 +455,7 @@ class _Step5ScreenState extends State<Step5Screen>
                                           );
                                         },
                                   ),
+                                  (route) => false,
                                 );
                               }
                             : null,

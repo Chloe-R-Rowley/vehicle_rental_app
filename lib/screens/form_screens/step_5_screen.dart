@@ -202,11 +202,48 @@ class _Step5ScreenState extends State<Step5Screen>
                       ),
                     ),
                   ] else if (isBookingError)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        (_bookingState as BookingError).message,
-                        style: const TextStyle(color: Colors.red, fontSize: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Column(
+                        children: [
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              (_bookingState as BookingError).message,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 16,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: const Color.fromARGB(
+                                255,
+                                0,
+                                149,
+                                255,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 24,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _bookingState = BookingLoading();
+                              });
+                              _bookingBloc.fetchBookings(_modelId!);
+                            },
+                            child: const Text('Retry'),
+                          ),
+                        ],
                       ),
                     )
                   else
